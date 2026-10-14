@@ -1,0 +1,3 @@
+# Produits par build.mjs et tools/generate.mjs ; la CI les reconstruit.
+dist/
+out/

@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Construction et ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Construire la page
+        run: node build.mjs
+      - name: Générer les scripts de test
+        run: node tools/generate.mjs out
+      - name: ShellCheck (tous niveaux)
+        run: shellcheck out/*.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scripts
+          path: out/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: dist/index.html
+
+  distros:
+    name: ${{ matrix.image }}
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { image: "debian:13",            pm: apt }
+          - { image: "ubuntu:24.04",         pm: apt }
+          - { image: "fedora:42",            pm: dnf }
+          - { image: "archlinux:latest",     pm: pacman }
+          - { image: "opensuse/tumbleweed",  pm: zypper }
+    container: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: scripts
+          path: out
+      - name: Installer, relancer, désinstaller
+        run: sh tests/container-test.sh ${{ matrix.pm }} "$PWD/out"
+
+  pages:
+    name: Publier sur GitHub Pages
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: distros
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
