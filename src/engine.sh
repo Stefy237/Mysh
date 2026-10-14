@@ -621,7 +621,7 @@ do_install() {
   fi
   printf '\n%s  ✓ Terminé.%s\n\n' "$C_GRN$C_B" "$C_RST"
   echo "  Prochaines étapes :"
-  echo "    1. Ouvre un nouveau terminal (ou tape : exec $CFG_SHELL)."
+  echo "    1. Déconnecte-toi puis reconnecte-toi (ou redémarre) pour que $CFG_SHELL devienne ton shell par défaut; en attendant tu peux tester avec exec $CFG_SHELL."
   [ -n "$CFG_FONT" ] && echo "    2. Dans les préférences du terminal, choisis la police « $(nerdfont_family "$CFG_FONT") »."
   echo
   echo "  Pour tout annuler :  $STATE_DIR/mysh.sh --uninstall"
