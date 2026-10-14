@@ -15,6 +15,7 @@ case "$PM" in
   zypper) zypper -n -q install sudo curl gawk shadow tar gzip >/dev/null ;;
 esac
 id tester >/dev/null 2>&1 || useradd -m -s /bin/bash tester
+
 echo 'tester ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/tester
 chmod 440 /etc/sudoers.d/tester
 echo "::endgroup::"
@@ -55,6 +56,7 @@ for variant in full fish bash; do
       # Logo : vrais codes couleur dans logo.txt, et fastfetch l'affiche
       grep -q "$(printf '\033')\[38;2;" "$H/.config/mysh/logo.txt"
       test -r "$H/.config/fastfetch/config.jsonc"
+      # shellcheck disable=SC2016  # $HOME et $PATH doivent s'étendre chez « tester »
       as_tester sh -c 'PATH="$HOME/.local/bin:$PATH" fastfetch --pipe false' | grep -q '⣿'
       ;;
     fish)

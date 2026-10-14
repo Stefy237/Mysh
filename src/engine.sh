@@ -496,7 +496,7 @@ do_install() {
   info "Paquets"
   if [ "$DRY_RUN" = 0 ]; then
     info "sudo peut te demander ton mot de passe (installation des paquets uniquement)."
-    sudo -v
+    sudo -n true 2>/dev/null || sudo -v
   fi
   pm_refresh
   local p to_install=() starship_github=0 fastfetch_github=0
@@ -706,7 +706,7 @@ do_uninstall() {
   fi
   if [ -n "$pkgs" ]; then
     if [ "$REMOVE_PKGS" = 1 ]; then
-      [ "$DRY_RUN" = 0 ] && sudo -v
+      [ "$DRY_RUN" = 0 ] && { sudo -n true 2>/dev/null || sudo -v; }
       # shellcheck disable=SC2086
       pm_remove "$pm" $pkgs || warn "Certains paquets n'ont pas pu être supprimés."
       ok "Paquets supprimés"
