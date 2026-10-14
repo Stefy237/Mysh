@@ -1,7 +1,7 @@
 # =============================================================================
 #  MOTEUR MYSH
 #  Cette partie est identique pour toutes les configurations. Elle lit les
-#  variables CFG_* définies plus haut et la fonction coquille_init_content.
+#  variables CFG_* définies plus haut et la fonction mysh_init_content.
 # =============================================================================
 
 # --- Téléchargements épinglés -------------------------------------------------
@@ -40,7 +40,7 @@ DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 CONF_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 STATE_DIR="$DATA_HOME/mysh"
 MANIFEST="$STATE_DIR/manifest"
-COQUILLE_CONF_DIR="$CONF_HOME/mysh"
+MYSH_CONF_DIR="$CONF_HOME/mysh"
 LOCAL_BIN="$HOME/.local/bin"
 MARK_BEGIN="# >>> mysh >>>"
 MARK_END="# <<< mysh <<<"
@@ -89,7 +89,7 @@ trap 'on_error $LINENO' ERR
 
 usage() {
   cat <<EOF
-Mysh $COQUILLE_VERSION — personnalisation du terminal
+Mysh $MYSH_VERSION — personnalisation du terminal
 
 Utilisation :
   $0                  installe la configuration choisie (demande confirmation)
@@ -325,23 +325,23 @@ install_fastfetch_from_github() {
   ok "fastfetch $FASTFETCH_VERSION installé dans $LOCAL_BIN"
 }
 
-# Logo personnalisé. Dans coquille_logo_content, les codes couleur sont écrits
+# Logo personnalisé. Dans mysh_logo_content, les codes couleur sont écrits
 # « \e[...m » en texte pour que le script reste lisible ; ils sont convertis
 # en vrais caractères d'échappement au moment d'écrire logo.txt.
 install_logo() {
-  local logo="$COQUILLE_CONF_DIR/logo.txt" ff_dir="$CONF_HOME/fastfetch" ff_conf json_path line
+  local logo="$MYSH_CONF_DIR/logo.txt" ff_dir="$CONF_HOME/fastfetch" ff_conf json_path line
   ff_conf="$ff_dir/config.jsonc"
   info "Logo personnalisé"
   if [ -z "${M[FASTFETCH_CONF]:-}" ]; then
     if [ -e "$ff_conf" ]; then backup_file "$ff_conf"; M[FASTFETCH_CONF]="backup"
     else M[FASTFETCH_CONF]="created"; fi
   fi
-  run mkdir -p "$COQUILLE_CONF_DIR" "$ff_dir"
+  run mkdir -p "$MYSH_CONF_DIR" "$ff_dir"
   if [ "$DRY_RUN" = 1 ]; then
     printf '%s    [simulation] écrire %s et %s%s\n' "$C_DIM" "$logo" "$ff_conf" "$C_RST"
     return 0
   fi
-  coquille_logo_content | while IFS= read -r line; do
+  mysh_logo_content | while IFS= read -r line; do
     printf '%s\n' "${line//\\e/$'\e'}"
   done > "$logo"
   json_path="${logo//\\/\\\\}"
@@ -358,7 +358,8 @@ install_logo() {
     "padding": { "top": 1, "left": 1, "right": 3 }
   },
   "modules": ["title", "separator", "os", "host", "kernel", "uptime", "packages",
-              "shell", "terminal", "cpu", "memory", "disk", "break", "colors"]
+              "shell", "terminal", "cpu", "memory", { "type": "disk", "folders": "/" },
+              "break", "colors"]
 }
 EOF
   ok "Logo écrit dans $logo"
@@ -433,8 +434,8 @@ do_install() {
   # Fichiers concernés selon le shell choisi
   local rc_file="" init_file
   case "$CFG_SHELL" in
-    zsh)  rc_file="$HOME/.zshrc";  init_file="$COQUILLE_CONF_DIR/init.zsh" ;;
-    bash) rc_file="$HOME/.bashrc"; init_file="$COQUILLE_CONF_DIR/init.bash" ;;
+    zsh)  rc_file="$HOME/.zshrc";  init_file="$MYSH_CONF_DIR/init.zsh" ;;
+    bash) rc_file="$HOME/.bashrc"; init_file="$MYSH_CONF_DIR/init.bash" ;;
     fish) init_file="$CONF_HOME/fish/conf.d/mysh.fish" ;;
     *) die "Shell inconnu : $CFG_SHELL" ;;
   esac
@@ -460,7 +461,7 @@ do_install() {
   fi
 
   # --- Résumé et confirmation ---
-  printf '\n%sCoquille %s%s — %s\n\n' "$C_B" "$COQUILLE_VERSION" "$C_RST" "$os_name"
+  printf '\n%sMysh %s%s — %s\n\n' "$C_B" "$MYSH_VERSION" "$C_RST" "$os_name"
   [ "$DRY_RUN" = 1 ] && printf '%sMODE SIMULATION : rien ne sera modifié.%s\n\n' "$C_YEL$C_B" "$C_RST"
   [ "$previous" = 1 ] && info "Une installation Mysh existe déjà : elle sera mise à jour, les sauvegardes d'origine sont conservées."
   info "Ce qui va se passer :"
@@ -468,7 +469,7 @@ do_install() {
   [ -n "$rc_file" ] && item "$rc_file : ajout d'un bloc de 4 lignes (fichier sauvegardé avant)"
   item "configuration écrite dans $init_file"
   [ "$CFG_STARSHIP" = 1 ] && [ -n "$CFG_STARSHIP_PRESET" ] && item "$starship_toml : thème « $CFG_STARSHIP_PRESET » (fichier sauvegardé avant)"
-  [ "$CFG_LOGO" = 1 ] && item "logo personnalisé : $COQUILLE_CONF_DIR/logo.txt et $CONF_HOME/fastfetch/config.jsonc (sauvegardé avant)"
+  [ "$CFG_LOGO" = 1 ] && item "logo personnalisé : $MYSH_CONF_DIR/logo.txt et $CONF_HOME/fastfetch/config.jsonc (sauvegardé avant)"
   [ -n "$CFG_FONT" ] && item "police $(nerdfont_family "$CFG_FONT") téléchargée depuis GitHub, empreinte SHA-256 vérifiée"
   [ "$CFG_CHSH" = 1 ] && item "$CFG_SHELL devient ton shell par défaut (chsh peut demander ton mot de passe)"
   item "sudo sert uniquement à installer les paquets"
@@ -477,7 +478,7 @@ do_install() {
   save_self
 
   # --- Sauvegardes ---
-  mset_once VERSION "$COQUILLE_VERSION"
+  mset_once VERSION "$MYSH_VERSION"
   mset_once BACKUP_DIR "$STATE_DIR/backups/$(date +%Y%m%d-%H%M%S)"
   M[PM]="$CFG_PM"
   M[SHELL]="$CFG_SHELL"
@@ -549,7 +550,7 @@ do_install() {
   if [ "$DRY_RUN" = 1 ]; then
     printf '%s    [simulation] écrire %s%s\n' "$C_DIM" "$init_file" "$C_RST"
   else
-    coquille_init_content > "$init_file"
+    mysh_init_content > "$init_file"
   fi
   M[INIT_FILE]="$init_file"
   ok "$init_file écrit"
@@ -669,7 +670,7 @@ do_uninstall() {
   fi
   if [ -n "${M[INIT_FILE]:-}" ]; then
     run rm -f "${M[INIT_FILE]}"
-    [ -d "$COQUILLE_CONF_DIR" ] && run rm -rf "$COQUILLE_CONF_DIR"
+    [ -d "$MYSH_CONF_DIR" ] && run rm -rf "$MYSH_CONF_DIR"
     ok "Configuration Mysh supprimée"
   fi
   local toml="$CONF_HOME/starship.toml"

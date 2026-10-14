@@ -47,6 +47,11 @@ for variant in full fish bash; do
     full)
       test "$(grep -c '>>> mysh >>>' "$H/.zshrc")" = 1
       as_tester zsh -i -c 'alias ls' | grep -q eza
+      # Commandes classiques remplacées, et toujours joignables sans l'alias
+      as_tester zsh -i -c 'alias grep' | grep -q rg
+      as_tester zsh -i -c 'alias top' | grep -q btop
+      as_tester zsh -i -c 'command grep --version' | grep -qi grep
+      as_tester zsh -i -c '\ls -d /' | grep -qx /
       # Logo : vrais codes couleur dans logo.txt, et fastfetch l'affiche
       grep -q "$(printf '\033')\[38;2;" "$H/.config/mysh/logo.txt"
       test -r "$H/.config/fastfetch/config.jsonc"

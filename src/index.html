@@ -2,887 +2,204 @@
 <meta name="description" content="Configure ton terminal Linux et récupère un script d'installation lisible, vérifiable et réversible.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Fira+Code:wght@400;600&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Symbols+2&display=swap">
-<style>
-/* Layout : établi — les réglages à gauche, le terminal et le « reçu » du script épinglés à droite ;
-   le script complet, l'annulation et la sécurité en dessous. */
-:root {
-  --bg: #eceff3;
-  --surface: #ffffff;
-  --sunk: #f5f7f9;
-  --ink: #16202a;
-  --muted: #56616d;
-  --line: #d3d9e0;
-  --accent: #c9461f;
-  --accent-soft: #fbe6de;
-  --accent-ink: #ffffff;
-  --ok: #1d7650;
-  --warn: #9a5b00;
-  --term-bg: #101923;
-  --term-fg: #dce4ec;
-  --term-dim: #6f7d8b;
-  --focus: #2f6fd6;
-  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
-  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  --radius: 10px;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0c131a; --surface: #141e28; --sunk: #101922; --ink: #e4eaf0; --muted: #94a2af;
-    --line: #253240; --accent: #ff7d55; --accent-soft: #3a1f16; --accent-ink: #1b0c06;
-    --ok: #4fc58d; --warn: #f0b354; --term-bg: #080e14; --term-fg: #dce4ec; --term-dim: #6f7d8b;
-    --focus: #7fb0ff; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0c131a; --surface: #141e28; --sunk: #101922; --ink: #e4eaf0; --muted: #94a2af;
-  --line: #253240; --accent: #ff7d55; --accent-soft: #3a1f16; --accent-ink: #1b0c06;
-  --ok: #4fc58d; --warn: #f0b354; --term-bg: #080e14; --term-fg: #dce4ec; --term-dim: #6f7d8b;
-  --focus: #7fb0ff; color-scheme: dark;
-}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+Symbols+2&display=swap">
+<link rel="stylesheet" href="styles.css">
 
-* { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--font-body); }
-.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; }
-h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; text-wrap: balance; margin: 0; }
-code, kbd, pre, .mono { font-family: var(--font-mono); font-size: .9em; }
-a { color: var(--accent); }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-p { margin: 0; }
-
-/* ---------- en-tête ---------- */
-.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 32px; padding-block-end: 24px; border-bottom: 1px solid var(--line); margin-bottom: 28px; }
-.brand { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.brand h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 800; letter-spacing: -.02em; }
-.brand h1 span { color: var(--accent); }
-.brand p { color: var(--muted); max-width: 52ch; font-size: 1.05rem; }
-.privacy { display: inline-flex; gap: 8px; align-items: center; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: .88rem; }
-.privacy b { color: var(--ok); font-weight: 700; }
-
-/* ---------- grille principale ---------- */
-.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 470px); gap: 28px; align-items: start; }
-@media (max-width: 980px) { .grid { grid-template-columns: minmax(0, 1fr); } }
-.form { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-.panel { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-@media (max-width: 980px) { .panel { position: static; } }
-
-fieldset { margin: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 18px 18px 20px; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
-legend { float: left; width: 100%; padding: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-legend h2 { font-size: 1.3rem; font-weight: 600; }
-legend .hint { color: var(--muted); font-size: .88rem; }
-fieldset > *:nth-child(2) { clear: both; }
-
-/* cartes de choix */
-.choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
-.choices.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.choices.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.choices.cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-@media (max-width: 760px) { .choices.cols-4, .choices.cols-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .choices.cols-3 { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 420px) { .choices.cols-4, .choices.cols-5 { grid-template-columns: minmax(0, 1fr); } }
-.choice { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--sunk); cursor: pointer; min-width: 0; }
-.choice input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
-.choice strong { font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; }
-.choice small { color: var(--muted); font-size: .84rem; line-height: 1.4; }
-.choice:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-.choice:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
-.choice .tag { position: absolute; top: 10px; right: 10px; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
-
-.swatches { display: flex; gap: 0; margin-top: 4px; height: 10px; border-radius: 3px; overflow: hidden; }
-.swatches i { flex: 1; }
-
-/* interrupteurs */
-.toggles { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px 18px; }
-.toggle { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: start; cursor: pointer; padding: 6px 0; }
-.toggle input { margin: 4px 0 0; width: 18px; height: 18px; accent-color: var(--accent); }
-.toggle span { font-weight: 700; }
-.toggle small { grid-column: 2; color: var(--muted); font-size: .86rem; line-height: 1.4; }
-.toggle:has(input:disabled) { opacity: .45; cursor: not-allowed; }
-
-/* outils */
-.tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
-.tool { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--sunk); cursor: pointer; min-width: 0; }
-.tool input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
-.tool code { font-weight: 600; font-size: .95rem; }
-.tool .rep { font-size: .74rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
-.tool small { grid-column: 2 / 4; color: var(--muted); font-size: .84rem; line-height: 1.35; }
-.tool:has(input:checked) { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
-.sub { padding: 12px 14px; border-left: 3px solid var(--line); background: var(--sunk); border-radius: 0 8px 8px 0; }
-
-/* ---------- terminal ---------- */
-.term { background: var(--term-bg); color: var(--term-fg); border-radius: var(--radius); overflow: hidden; box-shadow: 0 14px 36px -18px rgba(8, 14, 22, .55); }
-.term-bar { display: flex; align-items: center; gap: 7px; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.07); }
-.term-bar i { width: 11px; height: 11px; border-radius: 50%; background: #3a4654; }
-.term-bar span { margin-left: auto; font: 12px var(--font-mono); color: var(--term-dim); }
-.term-body { padding: 14px 16px 16px; font: 13.5px/1.7 var(--font-mono); overflow-x: auto; white-space: pre; }
-.seg { display: inline-block; padding: 0 12px 0 16px; margin-right: -6px; clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%, 7px 50%); }
-.seg:first-child { clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 0 100%); padding-left: 10px; border-radius: 4px 0 0 4px; }
-.ghost { color: var(--term-dim); }
-.caret { display: inline-block; width: .6em; height: 1.1em; vertical-align: -0.2em; background: var(--term-fg); animation: blink 1.1s steps(1) infinite; }
-@keyframes blink { 50% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
-
-/* ---------- reçu ---------- */
-.receipt { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 14px; }
-.receipt h2 { font-size: 1.2rem; font-weight: 600; }
-.rows { display: flex; flex-direction: column; gap: 12px; }
-.row h3 { font: 700 .74rem var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { font: 12.5px var(--font-mono); padding: 2px 8px; border-radius: 5px; background: var(--sunk); border: 1px solid var(--line); }
-.files { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.files li { display: grid; gap: 1px; font-size: .88rem; color: var(--muted); }
-.files code { color: var(--ink); font-size: .84rem; word-break: break-all; }
-.actions { display: flex; flex-wrap: wrap; gap: 10px; }
-button { font: 700 .95rem var(--font-body); border-radius: 8px; padding: 11px 16px; cursor: pointer; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); }
-button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); flex: 1 1 200px; }
-button:hover { filter: brightness(1.05); }
-.note { font-size: .86rem; color: var(--muted); min-height: 1.3em; }
-.note.ok { color: var(--ok); }
-.note.bad { color: var(--warn); }
-.hash { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 10px 12px; background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; }
-.hash span { font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; grid-column: 1 / 3; }
-.hash code { font-size: .74rem; word-break: break-all; line-height: 1.45; }
-.hash button { padding: 6px 10px; font-size: .8rem; }
-.cmds { margin: 0; padding: 12px 14px; background: var(--term-bg); color: var(--term-fg); border-radius: 8px; font: 12.5px/1.75 var(--font-mono); overflow-x: auto; white-space: pre; }
-.cmds .c { color: var(--term-dim); }
-
-/* ---------- sections du bas ---------- */
-.below { display: grid; gap: 28px; margin-top: 40px; }
-.sect { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.sect > h2 { font-size: clamp(1.4rem, 3vw, 1.8rem); font-weight: 800; letter-spacing: -.01em; }
-.sect > p { color: var(--muted); max-width: 70ch; }
-.code-view { max-height: 540px; overflow: auto; background: var(--term-bg); color: var(--term-fg); border-radius: 8px; font: 12.5px/1.6 var(--font-mono); counter-reset: ln; padding: 12px 0; }
-.code-view div { white-space: pre; padding: 0 16px 0 0; counter-increment: ln; min-height: 1.6em; }
-.code-view div::before { content: counter(ln); display: inline-block; width: 3.6em; padding-right: 1em; text-align: right; color: #4b5a68; user-select: none; }
-.code-view .cm { color: #7f93a6; }
-.code-view .cf { color: #f2a07c; }
-.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-.table-wrap { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-size: .93rem; }
-th, td { text-align: left; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font: 700 .74rem var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-td:first-child { white-space: nowrap; }
-details { border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; background: var(--sunk); }
-summary { cursor: pointer; font-weight: 700; }
-details ol { margin: 12px 0 0; padding-left: 1.2em; display: grid; gap: 8px; }
-.promises { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px 24px; }
-.promises li { display: grid; grid-template-columns: 20px 1fr; gap: 10px; }
-.promises li::before { content: ""; width: 14px; height: 14px; margin-top: 5px; border-radius: 3px; background: var(--ok); clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 22%, 86% 8%, 38% 72%); }
-.promises b { display: block; }
-.promises span { color: var(--muted); font-size: .93rem; }
-footer { margin-top: 36px; color: var(--muted); font-size: .88rem; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
-/* ---------- logo ---------- */
-.logo-editor { display: flex; flex-direction: column; gap: 14px; }
-.drop { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: center; padding: 14px; border: 1.5px dashed var(--line); border-radius: 8px; background: var(--sunk); }
-.drop.over { border-color: var(--accent); background: var(--accent-soft); }
-.drop canvas { width: 96px; height: 96px; border-radius: 6px; background: var(--term-bg); }
-.drop strong { display: block; font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; }
-.drop small { display: block; color: var(--muted); font-size: .86rem; margin: 2px 0 10px; }
-.drop-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.drop-actions button, .btn-file { font: 700 .88rem var(--font-body); padding: 8px 12px; border-radius: 7px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; position: relative; overflow: hidden; }
-.btn-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.btn-file:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
-.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 24px; }
-.slider { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; }
-.slider span { font-weight: 700; }
-.slider output { font: 600 .85rem var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
-.slider input { grid-column: 1 / 3; width: 100%; accent-color: var(--accent); }
-.colors { display: flex; flex-wrap: wrap; gap: 8px; }
-.cchip { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 8px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--sunk); cursor: pointer; font-size: .88rem; }
-.cchip input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-.cchip i { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(0,0,0,.15); }
-.cchip:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-.cchip:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
-.logo-meta { font-size: .86rem; color: var(--muted); }
-.ff { display: flex; gap: 3ch; align-items: flex-start; margin-bottom: 10px; width: max-content; }
-.ff-logo { font-family: "JetBrains Mono", "Noto Sans Symbols 2", "DejaVu Sans Mono", monospace; font-size: 12px; line-height: 1.12; white-space: pre; flex: none; }
-.ff-info { line-height: 1.55; white-space: pre; }
-.ff-info b { color: #56d4dd; font-weight: 600; }
-.ff-blocks span { display: inline-block; width: 1.6ch; height: 1em; vertical-align: -0.15em; }
-.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-</style>
-
-<div class="wrap">
-  <header class="top">
-    <div class="brand">
-      <h1>Mysh<span>.</span></h1>
-      <p>Choisis ce que tu veux dans ton terminal Linux. Tu récupères un script que tu peux lire, vérifier, simuler, et annuler.</p>
+<div class="page">
+  <header class="masthead">
+    <div class="id">
+      <h1 class="name">Mysh</h1>
+      <p class="lede">Configure ton terminal Linux. Tu récupères un script que tu lis, vérifies, simules, installes, et annules si tu changes d’avis.</p>
     </div>
-    <div class="privacy"><b>●</b> Tout se passe dans ton navigateur. Rien n'est envoyé.</div>
+    <nav class="modes" aria-label="Mode d’affichage">
+      <span>affichage</span>
+      <button type="button" data-mode="auto">auto</button>
+      <button type="button" data-mode="light">clair</button>
+      <button type="button" data-mode="dark">sombre</button>
+    </nav>
   </header>
+  <p class="privacy">Tout se passe dans ton navigateur. La page ne peut envoyer aucune donnée.</p>
 
-  <div class="grid">
-    <form class="form" id="form" autocomplete="off">
-      <fieldset>
-        <legend><h2>Distribution</h2><span class="hint">Pas sûr ? <code>cat /etc/os-release</code></span></legend>
-        <div class="choices cols-4" id="pm"></div>
-      </fieldset>
-
-      <fieldset>
-        <legend><h2>Shell</h2></legend>
-        <div class="choices cols-3" id="shell"></div>
-        <div class="toggles">
-          <label class="toggle"><input type="checkbox" id="chsh"><span>En faire mon shell par défaut</span><small>Via <code>chsh</code>, qui demande ton mot de passe.</small></label>
+  <div class="layout">
+    <form class="settings" id="form" autocomplete="off">
+      <section class="sec">
+        <h2>Distribution</h2>
+        <div class="body">
+          <div class="opts cols" id="pm"></div>
+          <p class="hint">Pas sûr ? <code>cat /etc/os-release</code>. Le script vérifie aussi avant de commencer.</p>
         </div>
-        <div class="sub toggles" id="zshopts">
-          <label class="toggle"><input type="checkbox" id="autosuggestions"><span>Suggestions</span><small>Propose en gris une commande déjà tapée, → pour l'accepter.</small></label>
-          <label class="toggle"><input type="checkbox" id="highlighting"><span>Coloration</span><small>Commande en vert si elle existe, en rouge sinon.</small></label>
-          <label class="toggle"><input type="checkbox" id="history"><span>Historique partagé</span><small>50 000 commandes, sans doublons, entre tous tes terminaux.</small></label>
-          <label class="toggle"><input type="checkbox" id="completion"><span>Complétion en menu</span><small>Tab ouvre un menu navigable, sans tenir compte des majuscules.</small></label>
-        </div>
-      </fieldset>
+      </section>
 
-      <fieldset>
-        <legend><h2>Prompt</h2><span class="hint">Starship : branche Git, versions, durée des commandes</span></legend>
-        <div class="toggles">
-          <label class="toggle"><input type="checkbox" id="starship"><span>Installer Starship</span><small>Depuis tes dépôts s'il y est, sinon la version 1.26.0 vérifiée par SHA-256.</small></label>
+      <section class="sec">
+        <h2>Shell</h2>
+        <div class="body">
+          <div class="opts" id="shell"></div>
+          <label class="chk"><input type="checkbox" id="chsh"><span class="mk"></span><span class="t"><b>En faire mon shell par défaut</b><small>Via <code>chsh</code>, qui demande ton mot de passe.</small></span></label>
+          <div class="opts cols sub" id="zshopts">
+            <label class="chk"><input type="checkbox" id="autosuggestions"><span class="mk"></span><span class="t"><b>Suggestions</b><small>Propose en gris une commande déjà tapée ; → pour l’accepter.</small></span></label>
+            <label class="chk"><input type="checkbox" id="highlighting"><span class="mk"></span><span class="t"><b>Coloration</b><small>Commande en vert si elle existe, en rouge sinon.</small></span></label>
+            <label class="chk"><input type="checkbox" id="history"><span class="mk"></span><span class="t"><b>Historique partagé</b><small>50 000 commandes, sans doublons, entre tous tes terminaux.</small></span></label>
+            <label class="chk"><input type="checkbox" id="completion"><span class="mk"></span><span class="t"><b>Complétion en menu</b><small>Tab ouvre un menu, sans tenir compte des majuscules.</small></span></label>
+          </div>
         </div>
-        <div class="choices cols-4" id="preset"></div>
-      </fieldset>
+      </section>
 
-      <fieldset>
-        <legend><h2>Police</h2><span class="hint">Nerd Font : nécessaire pour les icônes</span></legend>
-        <div class="choices cols-5" id="font"></div>
-      </fieldset>
-
-      <fieldset id="logoSet">
-        <legend><h2>Logo au démarrage</h2><span class="hint">Ton image en caractères, affichée par fastfetch</span></legend>
-        <div class="toggles">
-          <label class="toggle"><input type="checkbox" id="logoOn"><span>Afficher un logo personnalisé</span><small>Installe fastfetch et l'affiche à côté des infos système, à chaque nouveau terminal.</small></label>
+      <section class="sec">
+        <h2>Prompt</h2>
+        <div class="body">
+          <label class="chk"><input type="checkbox" id="starship"><span class="mk"></span><span class="t"><b>Installer Starship</b><small>Branche Git, versions, durée des commandes. Depuis tes dépôts, sinon la version 1.26.0 vérifiée par SHA-256.</small></span></label>
+          <div class="opts cols" id="preset"></div>
         </div>
-        <div class="logo-editor" id="logoEditor">
-          <div class="drop" id="drop">
-            <canvas id="srcThumb" width="192" height="192" aria-label="Image source"></canvas>
-            <div>
-              <strong>Dépose une image ici</strong>
-              <small>PNG, JPG ou SVG. Elle est convertie dans ton navigateur et n'est envoyée nulle part. Une silhouette contrastée sur fond transparent donne le meilleur résultat.</small>
-              <div class="drop-actions">
-                <label class="btn-file">Choisir une image<input type="file" id="logoFile" accept="image/*"></label>
-                <button type="button" id="sampleBtn">Reprendre le coquillage</button>
+      </section>
+
+      <section class="sec">
+        <h2>Police</h2>
+        <div class="body">
+          <div class="opts cols" id="font"></div>
+          <p class="hint">Une Nerd Font est nécessaire pour les icônes. Choisis-la ensuite dans les préférences de ton terminal.</p>
+        </div>
+      </section>
+
+      <section class="sec" id="logoSet">
+        <h2>Logo</h2>
+        <div class="body">
+          <label class="chk"><input type="checkbox" id="logoOn"><span class="mk"></span><span class="t"><b>Afficher un logo à l’ouverture du terminal</b><small>Ton image convertie en caractères, à côté des infos système (fastfetch).</small></span></label>
+          <div class="logo-editor" id="logoEditor">
+            <div class="drop" id="drop">
+              <canvas id="srcThumb" width="160" height="160" aria-label="Image source"></canvas>
+              <div class="drop-text">
+                <p>Glisse une image ici, ou <label class="link">choisis un fichier<input type="file" id="logoFile" accept="image/*"></label>. Elle est convertie dans ton navigateur et n’est envoyée nulle part.</p>
+                <p class="hint">Une silhouette contrastée sur fond transparent donne le meilleur résultat. <button type="button" class="link" id="sampleBtn">Reprendre le coquillage d’exemple</button></p>
               </div>
             </div>
+            <div class="opts inline" id="logoStyle"></div>
+            <div class="sliders">
+              <label class="slider" for="logoCols"><span>Largeur</span><output id="logoColsOut"></output><input type="range" id="logoCols" min="12" max="64" step="1"></label>
+              <label class="slider" for="logoDensity"><span>Densité</span><output id="logoDensityOut"></output><input type="range" id="logoDensity" min="5" max="95" step="1"></label>
+            </div>
+            <div class="opts inline" id="logoColor" role="radiogroup" aria-label="Couleur du logo"></div>
+            <label class="chk"><input type="checkbox" id="logoIgnoreBg"><span class="mk"></span><span class="t"><b>Ignorer le fond</b><small>Retire la couleur des coins de l’image. Inutile si ton PNG est déjà transparent.</small></span></label>
+            <p class="hint" id="logoMeta"></p>
           </div>
-          <div class="choices cols-3" id="logoStyle"></div>
-          <div class="sliders">
-            <label class="slider" for="logoCols"><span>Largeur</span><output id="logoColsOut"></output><input type="range" id="logoCols" min="12" max="64" step="1"></label>
-            <label class="slider" for="logoDensity"><span>Densité</span><output id="logoDensityOut"></output><input type="range" id="logoDensity" min="5" max="95" step="1"></label>
-          </div>
-          <div class="colors" id="logoColor" role="radiogroup" aria-label="Couleur du logo"></div>
-          <div class="toggles">
-            <label class="toggle"><input type="checkbox" id="logoIgnoreBg"><span>Ignorer le fond</span><small>Retire la couleur des coins de l'image. Inutile si ton PNG a déjà un fond transparent.</small></label>
-          </div>
-          <p class="logo-meta" id="logoMeta"></p>
         </div>
-      </fieldset>
+      </section>
 
-      <fieldset>
-        <legend><h2>Outils</h2><span class="hint">Installés depuis les dépôts officiels</span></legend>
-        <div class="tools" id="tools"></div>
-      </fieldset>
-
-      <fieldset>
-        <legend><h2>Confort</h2></legend>
-        <div class="toggles">
-          <label class="toggle"><input type="checkbox" id="aliasUpdate"><span>Alias <code>update</code></span><small id="updateHint">Met tout le système à jour en une commande.</small></label>
-          <label class="toggle"><input type="checkbox" id="aliasGit"><span>Raccourcis Git</span><small><code>gs</code> status, <code>ga</code> add, <code>gc</code> commit, <code>gp</code> push, <code>gl</code> log</small></label>
-          <label class="toggle"><input type="checkbox" id="zoxideCd"><span>Remplacer <code>cd</code> par zoxide</span><small><code>cd proj</code> saute directement au bon dossier.</small></label>
-          <label class="toggle"><input type="checkbox" id="fastfetchStart"><span>Infos système à l'ouverture</span><small>Lance fastfetch dans chaque nouveau terminal.</small></label>
+      <section class="sec">
+        <h2>Outils</h2>
+        <div class="body">
+          <div class="opts cols" id="tools"></div>
         </div>
-      </fieldset>
+      </section>
+
+      <section class="sec">
+        <h2>Commandes classiques</h2>
+        <div class="body">
+          <p class="lead">Garde tes réflexes : tape <code>ls</code>, obtiens <code>eza</code>. Les commandes d’origine restent installées, et <code>\ls</code> ou <code>command ls</code> les lance malgré l’alias. Les scripts ne sont jamais concernés.</p>
+          <div class="opts" id="replace"></div>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2>Raccourcis</h2>
+        <div class="body">
+          <div class="opts">
+            <label class="chk"><input type="checkbox" id="aliasUpdate"><span class="mk"></span><span class="t"><b><code>update</code></b><small id="updateHint">Met tout le système à jour en une commande.</small></span></label>
+            <label class="chk"><input type="checkbox" id="aliasGit"><span class="mk"></span><span class="t"><b>Raccourcis Git</b><small><code>gs</code> status, <code>ga</code> add, <code>gc</code> commit, <code>gp</code> push, <code>gl</code> log</small></span></label>
+            <label class="chk"><input type="checkbox" id="fastfetchStart"><span class="mk"></span><span class="t"><b>Infos système à l’ouverture</b><small>Lance fastfetch dans chaque nouveau terminal.</small></span></label>
+          </div>
+        </div>
+      </section>
     </form>
 
     <aside class="panel" aria-label="Résultat">
       <div class="term" aria-label="Aperçu du terminal">
-        <div class="term-bar"><i></i><i></i><i></i><span id="termTitle">zsh — 96×24</span></div>
+        <div class="term-bar" id="termTitle">zsh</div>
         <div class="term-body" id="termBody"></div>
       </div>
 
       <section class="receipt" aria-labelledby="receiptTitle">
         <h2 id="receiptTitle">Ce que fera le script</h2>
-        <div class="rows" id="rows"></div>
+        <dl id="rows"></dl>
         <div class="actions">
           <button type="button" class="primary" id="dlBtn">Télécharger le script</button>
-          <button type="button" id="copyBtn">Copier</button>
+          <button type="button" class="link" id="copyBtn">Copier le script</button>
         </div>
         <p class="note" id="dlNote" role="status"></p>
-        <div class="hash"><span>Empreinte SHA-256 du script</span><code id="sha">calcul…</code><button type="button" id="shaBtn">Copier</button></div>
+        <div class="hash">
+          <span>Empreinte SHA-256</span>
+          <code id="sha">calcul…</code>
+          <button type="button" class="link" id="shaBtn">Copier l’empreinte</button>
+        </div>
         <pre class="cmds" id="cmds"></pre>
       </section>
     </aside>
   </div>
 
-  <div class="below">
-    <section class="sect" id="script" aria-labelledby="scriptTitle">
-      <h2 id="scriptTitle">Le script complet</h2>
-      <p>Le même choix donne toujours exactement le même script, donc la même empreinte. Les lignes en orange sont tes choix ; tout le reste est le moteur commun, identique pour tout le monde.</p>
+  <section class="sec wide" id="script">
+    <h2>Le script</h2>
+    <div class="body">
+      <p class="lead">Le même choix donne toujours le même script, donc la même empreinte. Les lignes en couleur sont tes choix ; le reste est le moteur commun.</p>
       <div class="code-view" id="code" tabindex="0" aria-label="Contenu du script"></div>
-    </section>
+    </div>
+  </section>
 
-    <section class="sect" id="annuler" aria-labelledby="undoTitle">
-      <h2 id="undoTitle">Annuler les changements</h2>
-      <p>Pendant l'installation, le script garde une copie de lui-même et un manifeste qui liste exactement ce qu'il a modifié. L'annulation lit ce manifeste : elle ne devine rien et ne touche à rien d'autre.</p>
-      <pre class="cmds"><span class="c"># 1. Voir ce qui sera annulé, sans rien changer</span>
+  <section class="sec wide" id="annuler">
+    <h2>Annuler</h2>
+    <div class="body">
+      <p class="lead">L’installation garde une copie du script et un manifeste de tout ce qu’elle a modifié. L’annulation suit ce manifeste, sans rien deviner.</p>
+      <pre class="cmds"><span class="c"># Voir ce qui sera annulé, sans rien changer</span>
 ~/.local/share/mysh/mysh.sh --uninstall --dry-run
 
-<span class="c"># 2. Annuler</span>
+<span class="c"># Annuler</span>
 ~/.local/share/mysh/mysh.sh --uninstall
 
-<span class="c"># 3. Annuler et supprimer aussi les paquets installés par Mysh</span>
+<span class="c"># Annuler et supprimer aussi les paquets installés par Mysh</span>
 ~/.local/share/mysh/mysh.sh --uninstall --remove-packages</pre>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Élément</th><th>Ce que fait l'annulation</th></tr></thead>
-          <tbody>
-            <tr><td><code>~/.zshrc</code>, <code>~/.bashrc</code></td><td>Retire le bloc entre <code># &gt;&gt;&gt; mysh &gt;&gt;&gt;</code> et <code># &lt;&lt;&lt; mysh &lt;&lt;&lt;</code>. Le reste du fichier n'est pas touché, y compris ce que tu as modifié après l'installation.</td></tr>
-            <tr><td><code>~/.config/mysh/</code></td><td>Supprimé. Pour Fish : <code>conf.d/mysh.fish</code> supprimé.</td></tr>
-            <tr><td><code>starship.toml</code></td><td>Ton ancien fichier est restauré. S'il n'existait pas, celui de Mysh est supprimé.</td></tr>
-            <tr><td>Logo</td><td><code>~/.config/mysh/logo.txt</code> supprimé. Ton ancienne configuration fastfetch est restaurée ; s'il n'y en avait pas, celle de Mysh est supprimée.</td></tr>
-            <tr><td>Starship, fastfetch, police</td><td>Supprimés s'ils ont été téléchargés par Mysh (dans <code>~/.local</code>).</td></tr>
-            <tr><td>Shell par défaut</td><td>Remis à ton ancien shell (<code>chsh</code> demande ton mot de passe).</td></tr>
-            <tr><td>Paquets</td><td>Conservés par défaut, car d'autres programmes peuvent en avoir besoin. Avec <code>--remove-packages</code>, seuls ceux que Mysh a installés sont supprimés.</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <table>
+        <thead><tr><th>Élément</th><th>Ce que fait l’annulation</th></tr></thead>
+        <tbody>
+          <tr><td><code>~/.zshrc</code>, <code>~/.bashrc</code></td><td>Retire le bloc entre <code># &gt;&gt;&gt; mysh &gt;&gt;&gt;</code> et <code># &lt;&lt;&lt; mysh &lt;&lt;&lt;</code>. Le reste du fichier n’est pas touché.</td></tr>
+          <tr><td><code>~/.config/mysh/</code></td><td>Supprimé, avec le logo. Pour Fish : <code>conf.d/mysh.fish</code> supprimé.</td></tr>
+          <tr><td><code>starship.toml</code>, fastfetch</td><td>Tes anciens fichiers sont restaurés ; s’il n’y en avait pas, ceux de Mysh sont supprimés.</td></tr>
+          <tr><td>Starship, fastfetch, police</td><td>Supprimés s’ils ont été téléchargés par Mysh (dans <code>~/.local</code>).</td></tr>
+          <tr><td>Shell par défaut</td><td>Remis à ton ancien shell (<code>chsh</code> demande ton mot de passe).</td></tr>
+          <tr><td>Paquets</td><td>Conservés par défaut. Avec <code>--remove-packages</code>, seuls ceux que Mysh a installés sont supprimés.</td></tr>
+        </tbody>
+      </table>
       <details>
         <summary>Annuler à la main, sans le script</summary>
         <ol>
-          <li>Ouvre <code>~/.zshrc</code> (ou <code>~/.bashrc</code>) et supprime les lignes entre les deux marqueurs <code>mysh</code>.</li>
-          <li>Supprime la configuration : <code>rm -rf ~/.config/mysh</code></li>
-          <li>Retrouve tes fichiers d'origine : <code>ls ~/.local/share/mysh/backups/</code>, puis par exemple <code>cp ~/.local/share/mysh/backups/&lt;date&gt;/starship.toml ~/.config/</code></li>
-          <li>Reviens à ton ancien shell : <code>chsh -s /bin/bash</code></li>
+          <li>Supprime les lignes entre les deux marqueurs <code>mysh</code> dans <code>~/.zshrc</code> ou <code>~/.bashrc</code>.</li>
+          <li><code>rm -rf ~/.config/mysh</code></li>
+          <li>Recopie tes fichiers d’origine depuis <code>~/.local/share/mysh/backups/&lt;date&gt;/</code>.</li>
+          <li><code>chsh -s /bin/bash</code></li>
         </ol>
       </details>
-      <p>Après l'annulation, le dossier est renommé en <code>mysh.annule-&lt;date&gt;</code> : tes sauvegardes y restent jusqu'à ce que tu le supprimes.</p>
-    </section>
+    </div>
+  </section>
 
-    <section class="sect" aria-labelledby="trustTitle">
-      <h2 id="trustTitle">Pourquoi tu peux le lancer</h2>
+  <section class="sec wide">
+    <h2>Confiance</h2>
+    <div class="body">
       <ul class="promises">
-        <li><div><b>Rien ne quitte ton navigateur</b><span>Le script est assemblé ici, sans serveur, sans compte, sans statistiques.</span></div></li>
-        <li><div><b>Un script lisible, pas un binaire</b><span>Tu lis tout avant de lancer. <code>sha256sum</code> confirme que c'est bien ce fichier-là.</span></div></li>
-        <li><div><b>Dépôts officiels d'abord</b><span>Les paquets viennent du gestionnaire de ta distribution, avec ses signatures.</span></div></li>
-        <li><div><b>Téléchargements épinglés</b><span>Starship, fastfetch et la police ont leur empreinte SHA-256 écrite dans le script. Si elle ne correspond pas, le script s'arrête.</span></div></li>
-        <li><div><b>Jamais en root</b><span>Le script refuse de tourner en root et n'utilise sudo que pour installer les paquets.</span></div></li>
-        <li><div><b>Simulation et confirmation</b><span><code>--dry-run</code> montre chaque commande sans l'exécuter. Sinon, un résumé s'affiche et attend ton accord.</span></div></li>
-        <li><div><b>Tes fichiers sont sauvegardés</b><span>Copie avant toute modification. Les fichiers système de <code>/etc</code> ne sont jamais remplacés.</span></div></li>
-        <li><div><b>Relançable sans risque</b><span>Relancer le script remplace le bloc au lieu de l'ajouter une deuxième fois.</span></div></li>
+        <li><b>Rien ne quitte ton navigateur.</b> Pas de serveur, pas de compte, pas de statistiques.</li>
+        <li><b>Un script lisible, pas un binaire.</b> <code>sha256sum</code> confirme que c’est bien ce fichier.</li>
+        <li><b>Dépôts officiels d’abord.</b> Les paquets viennent du gestionnaire de ta distribution, avec ses signatures.</li>
+        <li><b>Téléchargements épinglés.</b> Starship, fastfetch et la police ont leur empreinte écrite dans le script.</li>
+        <li><b>Jamais en root.</b> <code>sudo</code> ne sert qu’au gestionnaire de paquets.</li>
+        <li><b>Simulation et confirmation.</b> <code>--dry-run</code> montre chaque commande sans l’exécuter.</li>
+        <li><b>Tes fichiers sont sauvegardés.</b> Les fichiers système de <code>/etc</code> ne sont jamais remplacés.</li>
+        <li><b>Relançable sans risque.</b> Le bloc ajouté est remplacé, jamais dupliqué.</li>
       </ul>
-    </section>
-  </div>
+    </div>
+  </section>
 
   <footer>
     <span>Mysh <span id="ver"></span> · code source ouvert, licence MIT</span>
-    <span>Vérifié avec ShellCheck · installation et annulation testées sur Ubuntu 24.04</span>
+    <span>Vérifié avec ShellCheck · testé par installation et annulation réelles</span>
   </footer>
 </div>
 
 <script type="text/plain" id="engine">@@ENGINE@@</script>
-<script>
-/*@@GENERATOR@@*/
-</script>
-<script>
-(function () {
-  'use strict';
-  // Ouvert directement depuis src/ : le moteur et le générateur ne sont pas encore insérés.
-  if (!window.Mysh || document.getElementById('engine').textContent.trim() === '@@' + 'ENGINE@@') {
-    document.querySelector('.wrap').insertAdjacentHTML('afterbegin',
-      '<p style="margin:0 0 20px;padding:14px 16px;border:1.5px solid var(--accent);border-radius:8px;background:var(--accent-soft)">' +
-      '<b>Ceci est le modèle de la page, pas la page finale.</b> Lance <code>node build.mjs</code>, puis ouvre <code>dist/index.html</code>.</p>');
-    return;
-  }
-  const C = window.Mysh;
-  const engine = document.getElementById('engine').textContent;
-  const $ = id => document.getElementById(id);
-  const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const STORE = 'mysh.config.v1';
-
-  // Couleurs approximatives des thèmes Starship, pour l'aperçu
-  const THEMES = {
-    'tokyo-night':          [['#a3aed2', '#090c0c'], ['#769ff0', '#e3e5e5'], ['#394260', '#769ff0'], ['#1d2230', '#a0a9cb']],
-    'catppuccin-powerline': [['#f38ba8', '#11111b'], ['#fab387', '#11111b'], ['#a6e3a1', '#11111b'], ['#74c7ec', '#11111b']],
-    'pastel-powerline':     [['#9a348e', '#ffffff'], ['#da627d', '#ffffff'], ['#fca17d', '#1b1b1b'], ['#33658a', '#ffffff']],
-    'gruvbox-rainbow':      [['#d65d0e', '#fbf1c7'], ['#d79921', '#fbf1c7'], ['#689d6a', '#fbf1c7'], ['#665c54', '#fbf1c7']],
-  };
-
-  let cfg = C.normalize(C.DEFAULTS);
-  try { const saved = JSON.parse(localStorage.getItem(STORE) || 'null'); if (saved) cfg = C.normalize(saved); } catch (e) { /* stockage indisponible */ }
-
-  // ---------- construction du formulaire ----------
-  function choiceGroup(el, name, items, render) {
-    el.innerHTML = items.map(it => `<label class="choice"><input type="radio" name="${name}" id="${name}-${it.id || 'none'}" value="${esc(it.id)}">${render(it)}</label>`).join('');
-  }
-  choiceGroup($('pm'), 'pm', Object.entries(C.PMS).map(([id, p]) => ({ id, ...p })),
-    p => `<strong>${esc(p.label)}</strong><small>${esc(p.distros)}</small>`);
-  choiceGroup($('shell'), 'shell', Object.entries(C.SHELLS).map(([id, s]) => ({ id, ...s })),
-    s => `${s.id === 'zsh' ? '<span class="tag">Conseillé</span>' : ''}<strong>${esc(s.label)}</strong><small>${esc(s.desc)}</small>`);
-  choiceGroup($('preset'), 'preset', C.PRESETS, p => {
-    const sw = THEMES[p.id] ? `<span class="swatches">${THEMES[p.id].map(c => `<i style="background:${c[0]}"></i>`).join('')}</span>` : '';
-    return `<strong>${esc(p.label)}</strong><small>${p.nerd ? 'Avec icônes (Nerd Font)' : 'Sans icônes spéciales'}</small>${sw}`;
-  });
-  choiceGroup($('font'), 'font', C.FONTS, f => `<strong>${esc(f.label)}</strong><small>${f.id ? esc(f.family) : 'J’ai déjà une police'}</small>`);
-  $('tools').innerHTML = C.TOOLS.map(t => `
-    <label class="tool"><input type="checkbox" id="tool-${t.id}" data-tool="${t.id}">
-      <code>${t.id}</code>${t.replaces ? `<span class="rep">remplace ${t.replaces}</span>` : '<span></span>'}
-      <small>${esc(t.desc)}</small></label>`).join('');
-
-  // ---------- logo : image -> caractères ----------
-  const LOGO_COLORS = { image: null, cyan: [86, 212, 221], magenta: [210, 168, 255], green: [126, 231, 135], orange: [255, 166, 87], white: [230, 237, 243] };
-  const LOGO_COLOR_LABELS = { image: 'Couleurs de l’image', cyan: 'Cyan', magenta: 'Magenta', green: 'Vert', orange: 'Orange', white: 'Blanc', none: 'Sans couleur' };
-  const RAMP = ' .:-=+*#%@';
-  let logoSource = null;
-  let logoSourceKind = 'sample';
-
-  function drawSample() {
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = 240;
-    const x = cv.getContext('2d');
-    const cx = 120, cy = 198, R = 160, n = 9;
-    const a0 = Math.PI * 1.1, a1 = Math.PI * 1.9;
-    const tones = ['#ff6a45', '#ff8456', '#ff9a66', '#ffad73', '#ffbd80', '#ffad73', '#ff9a66', '#ff8456', '#ff6a45'];
-    for (let i = 0; i < n; i++) {
-      const s0 = a0 + (a1 - a0) * i / n, s1 = a0 + (a1 - a0) * (i + 1) / n, mid = (s0 + s1) / 2;
-      x.fillStyle = tones[i];
-      x.beginPath(); x.moveTo(cx, cy); x.arc(cx, cy, R, s0, s1); x.closePath(); x.fill();
-      x.beginPath(); x.arc(cx + Math.cos(mid) * R * 0.97, cy + Math.sin(mid) * R * 0.97, R * 0.16, 0, Math.PI * 2); x.fill();
-    }
-    // Les côtes sont découpées (transparentes) pour rester visibles une fois en caractères
-    x.globalCompositeOperation = 'destination-out';
-    x.strokeStyle = '#000'; x.lineWidth = 9; x.lineCap = 'round';
-    for (let i = 1; i < n; i++) {
-      const a = a0 + (a1 - a0) * i / n;
-      x.beginPath(); x.moveTo(cx + Math.cos(a) * 18, cy + Math.sin(a) * 18); x.lineTo(cx + Math.cos(a) * R * 0.98, cy + Math.sin(a) * R * 0.98); x.stroke();
-    }
-    x.globalCompositeOperation = 'source-over';
-    x.fillStyle = '#d24e2c';
-    x.beginPath(); x.moveTo(cx - 42, cy + 2); x.lineTo(cx + 42, cy + 2); x.lineTo(cx + 24, cy + 32); x.lineTo(cx - 24, cy + 32); x.closePath(); x.fill();
-    return cv;
-  }
-
-  function drawThumb() {
-    const cv = $('srcThumb'), x = cv.getContext('2d');
-    x.clearRect(0, 0, cv.width, cv.height);
-    if (!logoSource) return;
-    const sw = logoSource.naturalWidth || logoSource.width, sh = logoSource.naturalHeight || logoSource.height;
-    const k = Math.min(cv.width / sw, cv.height / sh) * 0.9;
-    x.drawImage(logoSource, (cv.width - sw * k) / 2, (cv.height - sh * k) / 2, sw * k, sh * k);
-  }
-
-  function convertLogo(src, o) {
-    const sw = src.naturalWidth || src.width, sh = src.naturalHeight || src.height;
-    if (!sw || !sh) return null;
-    const aspect = sh / sw;
-    const geom = cols => o.style === 'braille' ? { cw: 2, ch: 4, pw: cols * 2, ph: Math.max(4, Math.round(cols * 2 * aspect)) }
-      : o.style === 'blocks' ? { cw: 1, ch: 2, pw: cols, ph: Math.max(2, Math.round(cols * aspect)) }
-      : { cw: 1, ch: 1, pw: cols, ph: Math.max(1, Math.round(cols * aspect / 2)) };
-    let cols = o.cols, g = geom(cols), rows = Math.ceil(g.ph / g.ch);
-    while (rows > 40 && cols > 12) { cols--; g = geom(cols); rows = Math.ceil(g.ph / g.ch); }
-    const cv = document.createElement('canvas');
-    cv.width = g.pw; cv.height = rows * g.ch;
-    const ctx = cv.getContext('2d', { willReadFrequently: true });
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(src, 0, 0, g.pw, g.ph);
-    const d = ctx.getImageData(0, 0, cv.width, cv.height).data, W = cv.width;
-    const px = (x, y) => { const i = (y * W + x) * 4; return [d[i], d[i + 1], d[i + 2], d[i + 3]]; };
-    const corners = [px(0, 0), px(g.pw - 1, 0), px(0, g.ph - 1), px(g.pw - 1, g.ph - 1)];
-    const transparent = corners.some(c => c[3] < 128);
-    const bg = [0, 1, 2].map(k => corners.reduce((n, c) => n + c[k], 0) / 4);
-    const t = 1 - o.density / 100;
-    const ink = (x, y) => {
-      if (y >= g.ph) return 0;
-      const [r, gg, b, a] = px(x, y);
-      if (transparent) return a / 255;
-      if (o.ignoreBg) return (a / 255) * Math.min(1, Math.hypot(r - bg[0], gg - bg[1], b - bg[2]) / 140);
-      return (a / 255) * (0.2126 * r + 0.7152 * gg + 0.0722 * b) / 255;
-    };
-    const q = v => Math.min(255, Math.round(v / 17) * 17);
-    const fixed = LOGO_COLORS[o.color] || null;
-    const colorOf = list => {
-      if (o.color === 'none' || !list.length) return null;
-      if (fixed) return fixed;
-      const s = list.reduce((acc, c) => [acc[0] + c[0], acc[1] + c[1], acc[2] + c[2]], [0, 0, 0]);
-      return s.map(v => q(v / list.length));
-    };
-    const grid = [];
-    for (let cy = 0; cy < rows; cy++) {
-      const row = [];
-      for (let cx = 0; cx < cols; cx++) {
-        const x0 = cx * g.cw, y0 = cy * g.ch;
-        if (o.style === 'braille') {
-          const BIT = [[0x01, 0x08], [0x02, 0x10], [0x04, 0x20], [0x40, 0x80]];
-          let bits = 0; const on = [];
-          for (let dy = 0; dy < 4; dy++) for (let dx = 0; dx < 2; dx++) {
-            if (ink(x0 + dx, y0 + dy) >= t) { bits |= BIT[dy][dx]; on.push(px(x0 + dx, y0 + dy)); }
-          }
-          row.push(bits ? { c: String.fromCharCode(0x2800 + bits), fg: colorOf(on) } : { c: ' ' });
-        } else if (o.style === 'blocks') {
-          const top = ink(x0, y0) >= t, bot = ink(x0, y0 + 1) >= t;
-          const ct = top ? colorOf([px(x0, y0)]) : null, cb = bot ? colorOf([px(x0, y0 + 1)]) : null;
-          if (top && bot) row.push(!ct || !cb || ct.join() === cb.join() ? { c: '\u2588', fg: ct } : { c: '\u2580', fg: ct, bg: cb });
-          else if (top) row.push({ c: '\u2580', fg: ct });
-          else if (bot) row.push({ c: '\u2584', fg: cb });
-          else row.push({ c: ' ' });
-        } else {
-          const v = ink(x0, y0);
-          const idx = v < t * 0.5 ? 0 : Math.max(1, Math.round(v * (RAMP.length - 1)));
-          row.push(idx ? { c: RAMP[idx], fg: colorOf([px(x0, y0)]) } : { c: ' ' });
-        }
-      }
-      grid.push(row);
-    }
-    // Recadrage sur la partie dessinée
-    const used = (r, c) => grid[r][c].c !== ' ';
-    let top = 0, bottom = rows - 1, left = cols, right = -1;
-    while (top <= bottom && grid[top].every(cell => cell.c === ' ')) top++;
-    while (bottom >= top && grid[bottom].every(cell => cell.c === ' ')) bottom--;
-    if (top > bottom) return null;
-    for (let r = top; r <= bottom; r++) for (let c = 0; c < cols; c++) if (used(r, c)) { left = Math.min(left, c); right = Math.max(right, c); }
-    const lines = [];
-    for (let r = top; r <= bottom; r++) {
-      let last = right; while (last >= left && grid[r][last].c === ' ') last--;
-      let out = '', cur = '';
-      for (let c = left; c <= last; c++) {
-        const cell = grid[r][c];
-        let want;
-        if (cell.c === ' ') want = cur.includes('48;2') ? '' : cur;
-        else want = cell.fg ? `38;2;${cell.fg.join(';')}` + (cell.bg ? `;48;2;${cell.bg.join(';')}` : '') : '';
-        if (want !== cur) {
-          if (!want || cur.includes('48;2')) out += '\\e[0m';
-          if (want) out += `\\e[${want}m`;
-          cur = want;
-        }
-        out += cell.c;
-      }
-      if (cur) out += '\\e[0m';
-      lines.push(out);
-    }
-    return { text: lines.join('\n'), w: right - left + 1, h: lines.length };
-  }
-
-  function ansiToHtml(t) {
-    const re = /\\e\[([0-9;]*)m/g;
-    let out = '', fg = null, bgc = null, last = 0, m;
-    const flush = str => {
-      if (!str) return;
-      const e = esc(str);
-      out += fg || bgc ? `<span style="${fg ? `color:${fg};` : ''}${bgc ? `background:${bgc};` : ''}">${e}</span>` : e;
-    };
-    while ((m = re.exec(t))) {
-      flush(t.slice(last, m.index));
-      const p = m[1].split(';').map(Number);
-      if (p[0] === 0) { fg = null; bgc = null; }
-      else {
-        if (p[0] === 38) fg = `rgb(${p[2]},${p[3]},${p[4]})`;
-        if (p[5] === 48) bgc = `rgb(${p[7]},${p[8]},${p[9]})`; else bgc = null;
-      }
-      last = re.lastIndex;
-    }
-    flush(t.slice(last));
-    return out;
-  }
-
-  function setSource(img, kind) {
-    logoSource = img; logoSourceKind = kind;
-    drawThumb();
-  }
-
-  function loadUpload(file) {
-    if (!file || !/^image\//.test(file.type)) { note('Ce fichier n’est pas une image.', 'bad'); return; }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        // Réduite à 256 px : assez pour 64 colonnes, et légère à garder dans le navigateur
-        const k = Math.min(1, 256 / Math.max(img.naturalWidth, img.naturalHeight));
-        const cv = document.createElement('canvas');
-        cv.width = Math.max(1, Math.round(img.naturalWidth * k)); cv.height = Math.max(1, Math.round(img.naturalHeight * k));
-        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
-        setSource(cv, 'upload');
-        try { localStorage.setItem(STORE + '.logo', cv.toDataURL('image/png')); } catch (e) { /* stockage plein ou indisponible */ }
-        if (!$('logoOn').checked) { $('logoOn').checked = true; $('tool-fastfetch').checked = true; $('fastfetchStart').checked = true; }
-        render();
-      };
-      img.onerror = () => note('Impossible de lire cette image. Essaie un PNG ou un JPG.', 'bad');
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  $('logoStyle').innerHTML = [['braille', 'Braille', 'Petits points, le plus fin'], ['blocks', 'Blocs', 'Gros pixels, couleurs pleines'], ['ascii', 'ASCII', 'Caractères classiques']]
-    .map(([id, label, desc]) => `<label class="choice"><input type="radio" name="logoStyle" id="logoStyle-${id}" value="${id}"><strong>${label}</strong><small>${desc}</small></label>`).join('');
-  $('logoColor').innerHTML = C.LOGO_COLORS.map(id => {
-    const sw = id === 'image' ? 'conic-gradient(#ff6a45, #ffd580, #7ee787, #79c0ff, #d2a8ff, #ff6a45)'
-      : id === 'none' ? 'transparent' : `rgb(${LOGO_COLORS[id].join(',')})`;
-    return `<label class="cchip"><input type="radio" name="logoColor" id="logoColor-${id}" value="${id}"><i style="background:${sw}"></i>${LOGO_COLOR_LABELS[id]}</label>`;
-  }).join('');
-
-  const BOOLS = ['chsh', 'autosuggestions', 'highlighting', 'history', 'completion', 'starship', 'aliasUpdate', 'aliasGit', 'zoxideCd', 'fastfetchStart'];
-
-  function readForm() {
-    const get = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value;
-    const next = { pm: get('pm'), shell: get('shell'), preset: get('preset'), font: get('font'), tools: {} };
-    BOOLS.forEach(k => { next[k] = $(k).checked; });
-    C.TOOLS.forEach(t => { next.tools[t.id] = $('tool-' + t.id).checked; });
-    next.logo = {
-      on: $('logoOn').checked,
-      style: get('logoStyle'),
-      cols: Number($('logoCols').value),
-      color: get('logoColor'),
-      density: Number($('logoDensity').value),
-      ignoreBg: $('logoIgnoreBg').checked,
-    };
-    const conv = next.logo.on && logoSource ? convertLogo(logoSource, C.normalize(next).logo) : null;
-    if (conv) Object.assign(next.logo, conv);
-    return C.normalize(next);
-  }
-
-  function writeForm(c) {
-    ['pm', 'shell', 'preset', 'font'].forEach(n => {
-      const el = $(`${n}-${c[n] || 'none'}`); if (el) el.checked = true;
-    });
-    BOOLS.forEach(k => { $(k).checked = c[k]; });
-    C.TOOLS.forEach(t => { $('tool-' + t.id).checked = c.tools[t.id]; });
-    const zsh = c.shell === 'zsh';
-    ['history', 'completion'].forEach(k => { $(k).disabled = !zsh; });
-    ['autosuggestions', 'highlighting'].forEach(k => { $(k).disabled = c.shell !== 'zsh'; });
-    $('zshopts').hidden = c.shell !== 'zsh';
-    $('chsh').disabled = c.shell === 'bash';
-    document.querySelectorAll('input[name="preset"]').forEach(i => { i.disabled = !c.starship; i.closest('.choice').style.opacity = c.starship ? '' : '.45'; });
-    $('zoxideCd').disabled = !c.tools.zoxide;
-    $('fastfetchStart').disabled = !c.tools.fastfetch;
-    $('logoOn').checked = c.logo.on || ($('logoOn').checked && !c.logo.text);
-    $('logoEditor').hidden = !$('logoOn').checked;
-    const ls = $(`logoStyle-${c.logo.style}`); if (ls) ls.checked = true;
-    const lc = $(`logoColor-${c.logo.color}`); if (lc) lc.checked = true;
-    $('logoCols').value = c.logo.cols; $('logoColsOut').textContent = `${c.logo.cols} colonnes`;
-    $('logoDensity').value = c.logo.density; $('logoDensityOut').textContent = `${c.logo.density} %`;
-    $('logoIgnoreBg').checked = c.logo.ignoreBg;
-    $('tool-fastfetch').disabled = c.logo.on;
-    $('logoMeta').textContent = c.logo.on
-      ? `Logo de ${c.logo.w} × ${c.logo.h} caractères${logoSourceKind === 'sample' ? ', à partir du coquillage d’exemple' : ''}. Choisis la même police Nerd Font dans ton terminal pour un rendu net.`
-      : ($('logoOn').checked ? 'Avec ces réglages, l’image ne donne aucun caractère : augmente la densité ou décoche « Ignorer le fond ».' : '');
-    $('updateHint').innerHTML = `<code>${esc(C.PMS[c.pm].update)}</code>`;
-  }
-
-  // ---------- aperçu du terminal ----------
-  function promptHTML(c) {
-    const dir = '~/projets/mysh', branch = 'main';
-    if (!c.starship) {
-      return c.shell === 'fish'
-        ? `<span style="color:#7ee787">laura@pc</span> <span style="color:#79c0ff">~/p/mysh</span>&gt; `
-        : `<span style="color:#7ee787;font-weight:600">laura@pc</span>:<span style="color:#79c0ff;font-weight:600">${dir}</span>$ `;
-    }
-    const t = THEMES[c.preset];
-    if (t) {
-      const parts = [' laura', ` ${dir}`, ` ${branch}`, ' 09:41'];
-      return parts.map((p, i) => `<span class="seg" style="background:${t[i][0]};color:${t[i][1]}">${esc(p)}</span>`).join('') + `\n<span style="color:#7ee787">❯</span> `;
-    }
-    if (c.preset === 'pure-preset') return `<span style="color:#79c0ff">${dir}</span> <span style="color:#8b949e">${branch}</span>\n<span style="color:#d2a8ff">❯</span> `;
-    if (c.preset === 'plain-text-symbols') return `<span style="color:#56d4dd;font-weight:600">${dir}</span> on <span style="color:#d2a8ff">git:${branch}</span>\n<span style="color:#7ee787">&gt;</span> `;
-    return `<span style="color:#56d4dd;font-weight:600">${dir}</span> on <span style="color:#d2a8ff;font-weight:600">${branch}</span>\n<span style="color:#7ee787;font-weight:600">❯</span> `;
-  }
-
-  function lsHTML(c) {
-    if (!c.tools.eza) {
-      return `<span style="color:#79c0ff;font-weight:600">docs</span>  notes.md  <span style="color:#79c0ff;font-weight:600">src</span>  install.sh`;
-    }
-    const ic = c.font ? ['▸ ', '▸ ', '· ', '· '] : ['', '', '', ''];
-    const rows = [
-      ['d', '-', '14 oct 09:12', 'docs', true],
-      ['d', '-', '14 oct 09:40', 'src', true],
-      ['.', '2,1k', '13 oct 18:05', 'notes.md', false],
-      ['.', '9,8k', '14 oct 09:38', 'install.sh', false],
-    ];
-    return rows.map((r, i) =>
-      `<span style="color:${r[0] === 'd' ? '#79c0ff' : '#8b949e'}">${r[0]}</span><span style="color:#ffd580">rw</span><span style="color:#ff9e7a">x</span><span style="color:#8b949e">r-xr-x</span> ` +
-      `<span style="color:#7ee787">${r[1].padStart(4)}</span> <span style="color:#e3b341">laura</span> <span style="color:#79c0ff">${r[2]}</span> ` +
-      `<span style="color:#7ee787">${r[4] ? '' : ' '}</span><span style="${r[4] ? 'color:#79c0ff;font-weight:600' : ''}">${ic[i]}${r[3]}</span>`
-    ).join('\n');
-  }
-
-  const OS_NAMES = { apt: 'Ubuntu 24.04 LTS x86_64', dnf: 'Fedora Linux 42 x86_64', pacman: 'Arch Linux x86_64', zypper: 'openSUSE Tumbleweed x86_64' };
-  const SHELL_VER = { zsh: 'zsh 5.9', fish: 'fish 3.7.1', bash: 'bash 5.2.21' };
-  function fastfetchHTML(c) {
-    const info = [
-      '<b>laura</b>@<b>pc</b>', '---------',
-      `<b>OS</b>: ${OS_NAMES[c.pm]}`, '<b>Kernel</b>: Linux 6.8', `<b>Shell</b>: ${SHELL_VER[c.shell]}`,
-      '<b>Terminal</b>: kitty 0.36', '<b>CPU</b>: Ryzen 5 5600G (12)', '<b>Memory</b>: 3.4 / 15.6 GiB (22%)', '',
-      '<span class="ff-blocks">' + ['#1d2230', '#ff6a5c', '#7ee787', '#ffd580', '#79c0ff', '#d2a8ff', '#56d4dd', '#dce4ec'].map(col => `<span style="background:${col}"></span>`).join('') + '</span>',
-    ];
-    const avail = Math.max(240, $('termBody').clientWidth - 32);
-    const fs = Math.max(5, Math.min(12, (avail * 0.42) / (Math.max(1, c.logo.w) * 0.62)));
-    return `<div class="ff"><span class="ff-logo" style="font-size:${fs.toFixed(1)}px">${ansiToHtml(c.logo.text)}</span><span class="ff-info">${info.join('\n')}</span></div>`;
-  }
-
-  function renderTerm(c) {
-    const fontMap = { FiraCode: '"Fira Code"', JetBrainsMono: '"JetBrains Mono"' };
-    $('termBody').style.fontFamily = `${fontMap[c.font] || '"JetBrains Mono"'}, ui-monospace, monospace`;
-    $('termTitle').textContent = `${c.shell} — ${C.FONTS.find(f => f.id === c.font).label === 'Aucune' ? 'ta police' : C.FONTS.find(f => f.id === c.font).label}`;
-    const lsCmd = c.tools.eza ? 'll' : 'ls';
-    const suggest = c.shell === 'fish' || (c.shell === 'zsh' && c.autosuggestions);
-    const colorCmd = c.shell === 'fish' || (c.shell === 'zsh' && c.highlighting);
-    const typed = colorCmd ? `<span style="color:#7ee787">git</span> st` : 'git st';
-    const ghost = suggest ? `<span class="ghost">atus -sb</span>` : '';
-    if (c.logo.on) {
-      const lead = c.fastfetchStart ? '' : `${promptHTML(c)}fastfetch\n`;
-      $('termBody').innerHTML = `${lead}${fastfetchHTML(c)}${promptHTML(c)}${typed}<span class="caret"></span>${ghost}`;
-      return;
-    }
-    $('termBody').innerHTML = `${promptHTML(c)}${lsCmd}\n${lsHTML(c)}\n\n${promptHTML(c)}${typed}<span class="caret"></span>${ghost}`;
-  }
-
-  // ---------- reçu ----------
-  function renderReceipt(c, sum) {
-    const html = [];
-    html.push(`<div class="row"><h3>${sum.packages.length} paquets via ${esc(c.pm)}, seulement ceux qui manquent</h3><div class="chips">${sum.packages.map(p => `<span class="chip">${esc(p)}</span>`).join('')}</div></div>`);
-    html.push(`<div class="row"><h3>Fichiers modifiés</h3><ul class="files">${sum.files.map(f => `<li><code>${esc(f.path)}</code>${esc(f.what)}</li>`).join('')}</ul></div>`);
-    if (sum.downloads.length) html.push(`<div class="row"><h3>Téléchargements vérifiés par SHA-256</h3><ul class="files">${sum.downloads.map(d => `<li>${esc(d)}</li>`).join('')}</ul></div>`);
-    if (sum.chsh) html.push(`<div class="row"><h3>Shell par défaut</h3><ul class="files"><li>${esc(sum.chsh)}, à la prochaine connexion</li></ul></div>`);
-    $('rows').innerHTML = html.join('');
-  }
-
-  // ---------- script ----------
-  let currentScript = '';
-  function renderCode(text) {
-    const lines = text.split('\n');
-    let inChoices = false;
-    $('code').innerHTML = lines.map(l => {
-      if (l.startsWith('# --- Tes choix')) inChoices = true;
-      else if (l.startsWith('# --- Contenu')) inChoices = false;
-      const cls = inChoices && l.startsWith('CFG_') ? 'cf' : /^\s*#/.test(l) ? 'cm' : '';
-      return `<div${cls ? ` class="${cls}"` : ''}>${esc(l)}</div>`;
-    }).join('');
-  }
-
-  async function sha256(text) {
-    if (!(window.crypto && crypto.subtle)) return null;
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  let renderId = 0;
-  async function render() {
-    cfg = readForm();
-    writeForm(cfg);
-    try { localStorage.setItem(STORE, JSON.stringify(cfg)); } catch (e) { /* ignore */ }
-    const sum = C.summarize(cfg);
-    renderTerm(cfg);
-    renderReceipt(cfg, sum);
-    currentScript = C.buildScript(cfg, engine);
-    renderCode(currentScript);
-    $('cmds').innerHTML =
-      `<span class="c"># Vérifier, puis voir ce qui serait fait</span>\nsha256sum mysh-install.sh\nchmod +x mysh-install.sh\n./mysh-install.sh --dry-run\n\n<span class="c"># Installer</span>\n./mysh-install.sh`;
-    const id = ++renderId;
-    $('sha').textContent = 'calcul…';
-    const h = await sha256(currentScript);
-    if (id === renderId) $('sha').textContent = h || 'indisponible ici (lance sha256sum)';
-  }
-
-  // ---------- zip minimal (le script garde ses droits d'exécution) ----------
-  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
-  const crc32 = b => { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
-  function zip(files) {
-    const enc = new TextEncoder(), parts = [], central = [];
-    let offset = 0;
-    for (const f of files) {
-      const name = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data);
-      const h = new DataView(new ArrayBuffer(30));
-      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true);
-      h.setUint16(8, 0, true); h.setUint16(10, 0, true); h.setUint16(12, 0x21, true);
-      h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true);
-      h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
-      parts.push(new Uint8Array(h.buffer), name, data);
-      const cd = new DataView(new ArrayBuffer(46));
-      cd.setUint32(0, 0x02014b50, true); cd.setUint16(4, 0x0314, true); cd.setUint16(6, 20, true); cd.setUint16(8, 0x0800, true);
-      cd.setUint16(10, 0, true); cd.setUint16(12, 0, true); cd.setUint16(14, 0x21, true);
-      cd.setUint32(16, crc, true); cd.setUint32(20, data.length, true); cd.setUint32(24, data.length, true);
-      cd.setUint16(28, name.length, true); cd.setUint32(38, ((f.mode || 0o100644) << 16) >>> 0, true); cd.setUint32(42, offset, true);
-      central.push(new Uint8Array(cd.buffer), name);
-      offset += 30 + name.length + data.length;
-    }
-    const cdSize = central.reduce((n, p) => n + p.length, 0);
-    const end = new DataView(new ArrayBuffer(22));
-    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
-    end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
-    return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: 'application/zip' });
-  }
-
-  // ---------- actions ----------
-  const note = (text, kind) => { $('dlNote').textContent = text; $('dlNote').className = 'note' + (kind ? ' ' + kind : ''); };
-  const downloadsReady = (window.claude && typeof window.claude.use === 'function')
-    ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
-
-  $('dlBtn').addEventListener('click', async () => {
-    const script = currentScript;
-    const hash = $('sha').textContent;
-    const dl = await downloadsReady;
-    if (dl) {
-      const readme = [
-        'Mysh — personnalisation du terminal', '',
-        'Empreinte SHA-256 de mysh-install.sh :', hash, '',
-        'unzip mysh.zip && cd mysh',
-        'sha256sum mysh-install.sh     # doit afficher l’empreinte ci-dessus',
-        './mysh-install.sh --dry-run   # voir ce qui serait fait',
-        './mysh-install.sh             # installer', '',
-        'Annuler : ~/.local/share/mysh/mysh.sh --uninstall', '',
-      ].join('\n');
-      try {
-        await dl.save({ filename: 'mysh.zip', data: zip([
-          { name: 'mysh/mysh-install.sh', text: script, mode: 0o100755 },
-          { name: 'mysh/LISEZMOI.txt', text: readme },
-        ]) });
-        note('Enregistré : mysh.zip contient le script (déjà exécutable) et un LISEZMOI.', 'ok');
-      } catch (e) {
-        if (e && e.code === 'declined') note('Téléchargement annulé.', 'bad');
-        else note('Le téléchargement n’est pas disponible ici. Utilise « Copier » et colle le script dans mysh-install.sh.', 'bad');
-      }
-      return;
-    }
-    const url = URL.createObjectURL(new Blob([script], { type: 'text/x-shellscript' }));
-    const a = document.createElement('a');
-    a.href = url; a.download = 'mysh-install.sh';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-    note('mysh-install.sh téléchargé. Vérifie son empreinte avant de le lancer.', 'ok');
-  });
-
-  async function copy(text, okMsg, fallbackEl) {
-    try { await navigator.clipboard.writeText(text); note(okMsg, 'ok'); }
-    catch (e) {
-      const r = document.createRange(); r.selectNodeContents(fallbackEl);
-      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
-      note('Texte sélectionné : copie-le avec Ctrl+C.', 'bad');
-    }
-  }
-  $('copyBtn').addEventListener('click', () => copy(currentScript, 'Script copié. Colle-le dans un fichier mysh-install.sh.', $('code')));
-  $('shaBtn').addEventListener('click', () => copy($('sha').textContent, 'Empreinte copiée.', $('sha')));
-  $('form').addEventListener('change', e => {
-    if (e.target.id === 'logoOn' && e.target.checked) { $('tool-fastfetch').checked = true; $('fastfetchStart').checked = true; }
-    if (e.target.id === 'logoFile') { loadUpload(e.target.files[0]); e.target.value = ''; return; }
-    render();
-  });
-  ['logoCols', 'logoDensity'].forEach(id => $(id).addEventListener('input', render));
-  $('sampleBtn').addEventListener('click', () => {
-    setSource(drawSample(), 'sample');
-    try { localStorage.removeItem(STORE + '.logo'); } catch (e) { /* ignore */ }
-    render();
-  });
-  const drop = $('drop');
-  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
-  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, () => drop.classList.remove('over')));
-  drop.addEventListener('drop', e => { e.preventDefault(); loadUpload(e.dataTransfer.files[0]); });
-  $('form').addEventListener('submit', e => e.preventDefault());
-  $('ver').textContent = C.VERSION;
-
-  setSource(drawSample(), 'sample');
-  writeForm(cfg);
-  render();
-  try {
-    const saved = localStorage.getItem(STORE + '.logo');
-    if (saved) {
-      const img = new Image();
-      img.onload = () => { setSource(img, 'upload'); render(); };
-      img.src = saved;
-    }
-  } catch (e) { /* stockage indisponible */ }
-})();
-</script>
+<script src="generator.js"></script>
+<script src="app.js"></script>

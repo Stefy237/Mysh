@@ -36,7 +36,7 @@ const noTools = Object.fromEntries(Mysh.TOOLS.map(t => [t.id, false]));
 
 for (const pm of pms) {
   const variants = {
-    full: { pm, shell: 'zsh', tools: allTools, fastfetchStart: true, zoxideCd: true, logo: sampleLogo() },
+    full: { pm, shell: 'zsh', tools: allTools, fastfetchStart: true, replace: { ls: true, cat: true, cd: true, top: true, grep: true, find: true }, logo: sampleLogo() },
     fish: { pm, shell: 'fish', preset: 'pure-preset', font: 'Hack', fastfetchStart: true, tools: { ...allTools, fastfetch: false }, logo: sampleLogo() },
     bash: { pm, shell: 'bash', starship: false, font: '', tools: { ...noTools, bat: true, fzf: true } },
   };

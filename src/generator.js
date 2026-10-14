@@ -67,12 +67,23 @@
     preset: 'tokyo-night',
     font: 'JetBrainsMono',
     tools: { eza: true, bat: true, fzf: true, zoxide: true, ripgrep: true, fd: true, btop: true, tldr: true, fastfetch: false },
-    zoxideCd: false,
+    replace: { ls: true, cat: true, cd: false, top: false, grep: false, find: false },
     aliasUpdate: true,
     aliasGit: true,
     fastfetchStart: false,
     logo: { on: false, text: '', w: 0, h: 0, style: 'braille', cols: 36, color: 'image', density: 50, ignoreBg: true },
   };
+
+  // Remplacer une commande classique par sa version moderne (alias interactifs uniquement).
+  // « risky » : options ou syntaxe différentes, un réflexe peut donner un résultat inattendu.
+  const REPLACEMENTS = [
+    { id: 'ls',   from: 'ls',   to: 'eza',    tool: 'eza',     risky: false, note: 'Mêmes usages, en couleur, avec icônes et statut Git.' },
+    { id: 'cat',  from: 'cat',  to: 'bat',    tool: 'bat',     risky: false, note: 'Affiche les fichiers avec coloration ; ne pagine pas.' },
+    { id: 'cd',   from: 'cd',   to: 'zoxide', tool: 'zoxide',  risky: false, note: '« cd dossier » marche comme avant ; « cd proj » saute au dossier le plus visité.' },
+    { id: 'top',  from: 'top',  to: 'btop',   tool: 'btop',    risky: false, note: 'Mêmes informations, interface différente.' },
+    { id: 'grep', from: 'grep', to: 'rg',     tool: 'ripgrep', risky: true,  note: 'Options différentes : la recherche est récursive par défaut, certaines options changent de sens.' },
+    { id: 'find', from: 'find', to: 'fd',     tool: 'fd',      risky: true,  note: 'Syntaxe différente : « find . -name "*.md" » s’écrit « fd -e md ».' },
+  ];
 
   const LOGO_STYLES = ['braille', 'blocks', 'ascii'];
   const LOGO_COLORS = ['image', 'cyan', 'magenta', 'green', 'orange', 'white', 'none'];
@@ -104,13 +115,18 @@
       tools: {},
     };
     for (const k of ['chsh', 'autosuggestions', 'highlighting', 'history', 'completion', 'starship',
-                     'zoxideCd', 'aliasUpdate', 'aliasGit', 'fastfetchStart']) {
+                     'aliasUpdate', 'aliasGit', 'fastfetchStart']) {
       c[k] = bool(i[k], DEFAULTS[k]);
     }
     for (const t of TOOLS) c.tools[t.id] = bool(i.tools && i.tools[t.id], DEFAULTS.tools[t.id]);
     if (c.shell === 'bash') { c.autosuggestions = false; c.highlighting = false; }
     if (c.shell !== 'zsh') { c.history = false; c.completion = false; }
-    if (!c.tools.zoxide) c.zoxideCd = false;
+    const ri = i.replace && typeof i.replace === 'object' ? i.replace : {};
+    c.replace = {};
+    for (const r of REPLACEMENTS) {
+      const legacy = r.id === 'cd' && typeof i.zoxideCd === 'boolean' ? i.zoxideCd : undefined;
+      c.replace[r.id] = bool(ri[r.id], legacy ?? DEFAULTS.replace[r.id]);
+    }
     const li = i.logo && typeof i.logo === 'object' ? i.logo : {};
     const D = DEFAULTS.logo;
     c.logo = {
@@ -130,6 +146,7 @@
     if (!c.logo.text || !c.logo.w) c.logo.on = false;
     if (c.logo.on) c.tools.fastfetch = true;
     if (!c.tools.fastfetch) c.fastfetchStart = false;
+    for (const r of REPLACEMENTS) if (!c.tools[r.tool]) c.replace[r.id] = false;
     return c;
   }
 
@@ -145,26 +162,34 @@
   // ---------------------------------------------------------------- init files
   function shAliases(c) {
     const icons = c.font ? ' --icons' : '';
+    const R = c.replace;
     const L = [];
+    if (REPLACEMENTS.some(r => R[r.id])) L.push(
+      '# Les commandes d’origine restent installées. Pour les lancer malgré un alias :',
+      '#   \\ls   ou   command ls',
+      '# Les alias ne valent que dans ton terminal : les scripts ne sont jamais concernés.', '');
     if (c.tools.eza) L.push(
-      '# ls -> eza',
+      '# eza' + (R.ls ? ' (remplace ls)' : ''),
       'if command -v eza >/dev/null 2>&1; then',
-      `  alias ls='eza --group-directories-first${icons}'`,
+      ...(R.ls ? [`  alias ls='eza --group-directories-first${icons}'`] : []),
       `  alias ll='eza -lah --group-directories-first${icons} --git'`,
-      `  alias tree='eza --tree${icons}'`,
+      `  alias lt='eza --tree --level=2${icons}'`,
       'fi', '');
     if (c.tools.bat) L.push(
-      '# cat -> bat (appelé batcat sur Debian/Ubuntu)',
+      '# bat' + (R.cat ? ' (remplace cat)' : '') + ' ; il s’appelle batcat sur Debian/Ubuntu',
       'if command -v batcat >/dev/null 2>&1; then',
-      "  alias cat='batcat --paging=never'",
-      'elif command -v bat >/dev/null 2>&1; then',
-      "  alias cat='bat --paging=never'",
+      ...(R.cat ? ["  alias cat='batcat --paging=never'"] : []),
+      "  command -v bat >/dev/null 2>&1 || alias bat='batcat'",
+      ...(R.cat ? ['elif command -v bat >/dev/null 2>&1; then', "  alias cat='bat --paging=never'"] : []),
       'fi', '');
     if (c.tools.fd) L.push(
-      '# fd (appelé fdfind sur Debian/Ubuntu)',
-      'if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then',
-      "  alias fd='fdfind'",
+      '# fd' + (R.find ? ' (remplace find)' : '') + ' ; il s’appelle fdfind sur Debian/Ubuntu',
+      'if command -v fdfind >/dev/null 2>&1; then',
+      "  command -v fd >/dev/null 2>&1 || alias fd='fdfind'",
+      ...(R.find ? ["  alias find='fdfind'", 'elif command -v fd >/dev/null 2>&1; then', "  alias find='fd'"] : []),
       'fi', '');
+    if (R.top) L.push('# btop (remplace top)', 'if command -v btop >/dev/null 2>&1; then', "  alias top='btop'", 'fi', '');
+    if (R.grep) L.push('# ripgrep (remplace grep)', 'if command -v rg >/dev/null 2>&1; then', "  alias grep='rg'", 'fi', '');
     if (c.aliasUpdate) L.push('# Mise à jour du système', `alias update='${PMS[c.pm].update}'`, '');
     if (c.aliasGit) L.push(
       '# Raccourcis Git',
@@ -229,7 +254,7 @@
     L.push(...shAliases(c));
     if (c.tools.zoxide) L.push('# zoxide',
       'if command -v zoxide >/dev/null 2>&1; then',
-      `  eval "$(zoxide init zsh${c.zoxideCd ? ' --cmd cd' : ''})"`,
+      `  eval "$(zoxide init zsh${c.replace.cd ? ' --cmd cd' : ''})"`,
       'fi', '');
     if (c.tools.fzf) L.push('# fzf : Ctrl+R (historique), Ctrl+T (fichiers)',
       'if command -v fzf >/dev/null 2>&1; then',
@@ -259,7 +284,7 @@
     L.push(...shAliases(c));
     if (c.tools.zoxide) L.push('# zoxide',
       'if command -v zoxide >/dev/null 2>&1; then',
-      `  eval "$(zoxide init bash${c.zoxideCd ? ' --cmd cd' : ''})"`,
+      `  eval "$(zoxide init bash${c.replace.cd ? ' --cmd cd' : ''})"`,
       'fi', '');
     if (c.tools.fzf) L.push('# fzf : Ctrl+R (historique), Ctrl+T (fichiers)',
       'if command -v fzf >/dev/null 2>&1; then',
@@ -284,21 +309,30 @@
     L.push('if status is-interactive');
     L.push('    # Commandes installées dans ~/.local/bin',
            '    if functions -q fish_add_path', '        fish_add_path -g $HOME/.local/bin', '    end', '');
+    const R = c.replace;
+    if (REPLACEMENTS.some(r => R[r.id])) L.push(
+      '    # Les commandes d’origine restent installées. Pour les lancer malgré un alias :',
+      '    #   command ls', '');
     if (c.tools.eza) L.push('    if type -q eza',
-      `        alias ls 'eza --group-directories-first${icons}'`,
+      ...(R.ls ? [`        alias ls 'eza --group-directories-first${icons}'`] : []),
       `        alias ll 'eza -lah --group-directories-first${icons} --git'`,
-      `        alias tree 'eza --tree${icons}'`, '    end', '');
+      `        alias lt 'eza --tree --level=2${icons}'`, '    end', '');
     if (c.tools.bat) L.push('    if type -q batcat',
-      "        alias cat 'batcat --paging=never'", '    else if type -q bat',
-      "        alias cat 'bat --paging=never'", '    end', '');
-    if (c.tools.fd) L.push('    if type -q fdfind; and not type -q fd', "        alias fd 'fdfind'", '    end', '');
+      ...(R.cat ? ["        alias cat 'batcat --paging=never'"] : []),
+      "        type -q bat; or alias bat 'batcat'",
+      ...(R.cat ? ['    else if type -q bat', "        alias cat 'bat --paging=never'"] : []), '    end', '');
+    if (c.tools.fd) L.push('    if type -q fdfind',
+      "        type -q fd; or alias fd 'fdfind'",
+      ...(R.find ? ["        alias find 'fdfind'", '    else if type -q fd', "        alias find 'fd'"] : []), '    end', '');
+    if (R.top) L.push('    if type -q btop', "        alias top 'btop'", '    end', '');
+    if (R.grep) L.push('    if type -q rg', "        alias grep 'rg'", '    end', '');
     if (c.aliasUpdate) L.push(`    alias update '${PMS[c.pm].update}'`, '');
     if (c.aliasGit) L.push(
       "    abbr -a gs 'git status -sb'", "    abbr -a ga 'git add'", "    abbr -a gc 'git commit'",
       "    abbr -a gp 'git push'", "    abbr -a gd 'git diff'",
       "    abbr -a gl 'git log --oneline --graph --decorate -20'", '');
     if (c.tools.zoxide) L.push('    if type -q zoxide',
-      `        zoxide init fish${c.zoxideCd ? ' --cmd cd' : ''} | source`, '    end', '');
+      `        zoxide init fish${c.replace.cd ? ' --cmd cd' : ''} | source`, '    end', '');
     if (c.tools.fzf) L.push('    if type -q fzf; and fzf --fish >/dev/null 2>&1',
       '        fzf --fish | source', '    end', '');
     if (c.fastfetchStart) {
@@ -340,6 +374,7 @@
       packages: logicalPackages(c).concat(c.starship ? ['starship'] : []),
       files,
       downloads,
+      replaced: REPLACEMENTS.filter(r => c.replace[r.id]).map(r => `${r.from} → ${r.to}`),
       chsh: c.chsh && c.shell !== 'bash' ? c.shell : null,
       fontFamily: c.font ? FONTS.find(f => f.id === c.font).family : '',
     };
@@ -360,7 +395,8 @@
       `Prompt Starship         : ${c.starship ? (PRESETS.find(p => p.id === c.preset).label) : 'non'}`,
       `Police Nerd Font        : ${c.font ? FONTS.find(f => f.id === c.font).label : 'aucune'}`,
       `Outils                  : ${tools}`,
-      `Alias                   : update ${yes(c.aliasUpdate)}, git ${yes(c.aliasGit)}, cd→zoxide ${yes(c.zoxideCd)}`,
+      `Commandes remplacées    : ${REPLACEMENTS.filter(r => c.replace[r.id]).map(r => `${r.from}→${r.to}`).join(', ') || 'aucune'}`,
+      `Alias                   : update ${yes(c.aliasUpdate)}, git ${yes(c.aliasGit)}`,
       `Logo personnalisé       : ${c.logo.on ? `${{ braille: 'braille', blocks: 'blocs', ascii: 'ASCII' }[c.logo.style]}, ${c.logo.w}×${c.logo.h} caractères` : 'non'}`);
     return lines;
   }
@@ -369,7 +405,7 @@
     if (typeof engine !== 'string' || !engine.includes('main "$@"')) throw new Error('Moteur Mysh manquant');
     const c = normalize(input);
     const init = initContent(c);
-    if (init.includes('COQUILLE_EOF')) throw new Error('Contenu invalide');
+    if (init.includes('MYSH_EOF')) throw new Error('Contenu invalide');
     const out = [
       '#!/usr/bin/env bash',
       '# =============================================================================',
@@ -393,7 +429,7 @@
       'set -Eeuo pipefail',
       '',
       '# --- Tes choix --------------------------------------------------------------',
-      `COQUILLE_VERSION="${VERSION}"`,
+      `MYSH_VERSION="${VERSION}"`,
       `CFG_PM="${c.pm}"`,
       `CFG_SHELL="${c.shell}"`,
       `CFG_CHSH=${c.chsh && c.shell !== 'bash' ? 1 : 0}`,
@@ -407,20 +443,20 @@
       `CFG_LOGO_HEIGHT=${c.logo.on ? c.logo.h : 0}`,
       '',
       '# --- Contenu du fichier de configuration que le script va écrire -----------',
-      'coquille_init_content() {',
-      "  cat <<'COQUILLE_EOF'",
+      'mysh_init_content() {',
+      "  cat <<'MYSH_EOF'",
       init,
-      'COQUILLE_EOF',
+      'MYSH_EOF',
       '}',
       '',
       '# --- Logo (codes couleur écrits « \\e[...m », convertis à l’installation) ---',
-      'coquille_logo_content() {',
-      ...(c.logo.on ? ["  cat <<'COQUILLE_LOGO'", c.logo.text, 'COQUILLE_LOGO'] : ['  :']),
+      'mysh_logo_content() {',
+      ...(c.logo.on ? ["  cat <<'MYSH_LOGO'", c.logo.text, 'MYSH_LOGO'] : ['  :']),
       '}',
       '',
     ];
     return out.join('\n') + engine.replace(/^\s+/, '') ;
   }
 
-  return { VERSION, PMS, SHELLS, TOOLS, PRESETS, FONTS, DEFAULTS, LOGO_STYLES, LOGO_COLORS, normalize, summarize, buildScript, initContent, validLogoText };
+  return { VERSION, PMS, SHELLS, TOOLS, PRESETS, FONTS, DEFAULTS, REPLACEMENTS, LOGO_STYLES, LOGO_COLORS, normalize, summarize, buildScript, initContent, validLogoText };
 });

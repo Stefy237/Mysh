@@ -13,7 +13,8 @@ On choisit sa distribution, son shell, un thème de prompt, une police et des ou
 | Prompt | Starship avec un thème : Tokyo Night, Catppuccin, Pastel, Gruvbox, Pure, texte seul, ou celui par défaut |
 | Police | JetBrains Mono, Fira Code, Hack ou Cascadia Code (Nerd Fonts) |
 | Outils | eza, bat, fzf, zoxide, ripgrep, fd, btop, tldr, fastfetch |
-| Confort | alias `update`, raccourcis Git, `cd` remplacé par zoxide, fastfetch à l'ouverture |
+| Commandes classiques | `ls` → eza et `cat` → bat (activés par défaut) ; `cd` → zoxide, `top` → btop, `grep` → rg, `find` → fd (au choix) |
+| Confort | alias `update`, raccourcis Git, fastfetch à l'ouverture |
 | Logo | une image à toi, convertie en caractères (braille, blocs ou ASCII), affichée par fastfetch |
 
 ## Logo personnalisé
@@ -83,12 +84,20 @@ Le dossier d'état est ensuite renommé en `mysh.annule-<date>`, et les sauvegar
 ```
 src/engine.sh        moteur du script (identique pour toutes les configurations)
 src/generator.js     options, filtrage et assemblage du script (navigateur et Node)
-src/index.html       interface
-build.mjs            assemble dist/index.html, une page autonome
+src/index.html       structure de la page (balises seulement)
+src/styles.css       apparence : thème Console, en mode clair et sombre
+src/app.js           logique de la page : formulaire, aperçu, logo, téléchargement
+build.mjs            réunit le tout dans dist/index.html, une page autonome
 tools/generate.mjs   génère des scripts en ligne de commande (tests)
 tests/container-test.sh   test d'intégration dans un conteneur
 .github/workflows/ci.yml  ShellCheck + tests sur 5 distributions + GitHub Pages
 ```
+
+## Commandes classiques
+
+Les alias ne remplacent rien sur le disque : `ls`, `cat`, `grep`… restent installés. Ils ne s'appliquent que dans un terminal interactif, donc les scripts et `sudo` utilisent toujours les vraies commandes. Pour passer outre le temps d'une commande : `\ls` ou `command ls` (Fish : `command ls`).
+
+`grep` → rg et `find` → fd sont marqués « prudence » : leurs options diffèrent, et une habitude comme `find . -name "*.md"` ne marche plus telle quelle.
 
 ## Ouvrir la page en local
 
