@@ -131,7 +131,7 @@ a, .link { color: var(--accent); }
 .opts { display: grid; gap: 0 28px; }
 .opts.cols { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
 .opts.inline { display: flex; flex-wrap: wrap; gap: 2px 24px; }
-.opts.sub { padding-left: 26px; border-left: 1px solid var(--rule); }
+.opts.sub { margin: 0 0 8px 42px; padding-left: 16px; border-left: 1px solid var(--rule); }
 .opt, .chk { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 0 12px; padding: 7px 0; cursor: pointer; align-items: start; }
 .opt input, .chk input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
 input:focus-visible + .mk { outline: 2px solid var(--accent); outline-offset: 2px; }

@@ -119,8 +119,7 @@
       c[k] = bool(i[k], DEFAULTS[k]);
     }
     for (const t of TOOLS) c.tools[t.id] = bool(i.tools && i.tools[t.id], DEFAULTS.tools[t.id]);
-    if (c.shell === 'bash') { c.autosuggestions = false; c.highlighting = false; }
-    if (c.shell !== 'zsh') { c.history = false; c.completion = false; }
+
     const ri = i.replace && typeof i.replace === 'object' ? i.replace : {};
     c.replace = {};
     for (const r of REPLACEMENTS) {

@@ -14,7 +14,10 @@
   const engine = document.getElementById('engine').textContent;
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  const STORE = 'mysh.config.v1';
+  // v2 : les options Zsh ne sont plus effacées quand on choisit un autre shell ;
+  // les configurations v1 enregistrées pouvaient les avoir mises à « non ».
+  const STORE = 'mysh.config.v2';
+  const LOGO_STORE = 'mysh.config.v1.logo';
 
   // Couleurs approximatives des thèmes Starship, pour l'aperçu
   const THEMES = {
@@ -52,6 +55,8 @@
   radios($('pm'), 'pm', Object.entries(C.PMS).map(([id, p]) => ({ id, ...p })), p => esc(p.label), p => esc(p.distros));
   radios($('shell'), 'shell', Object.entries(C.SHELLS).map(([id, x]) => ({ id, ...x })), x => esc(x.label), x => esc(x.desc),
     x => (x.id === 'zsh' ? '<span class="flag">conseillé</span>' : ''));
+  // Les options propres à Zsh s'affichent juste sous « Zsh ».
+  $('shell-zsh').closest('label').after($('zshopts'));
   radios($('preset'), 'preset', C.PRESETS, p => esc(p.label), p => (p.nerd ? 'Avec icônes (Nerd Font)' : 'Sans icônes spéciales'),
     p => (THEMES[p.id] ? `<span class="sw">${THEMES[p.id].map(c => `<i style="background:${c[0]}"></i>`).join('')}</span>` : ''));
   radios($('font'), 'font', C.FONTS, f => esc(f.label), f => (f.id ? esc(f.family) : 'J’ai déjà une police'));
@@ -233,7 +238,7 @@
         cv.width = Math.max(1, Math.round(img.naturalWidth * k)); cv.height = Math.max(1, Math.round(img.naturalHeight * k));
         cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
         setSource(cv, 'upload');
-        try { localStorage.setItem(STORE + '.logo', cv.toDataURL('image/png')); } catch (e) { /* stockage plein ou indisponible */ }
+        try { localStorage.setItem(LOGO_STORE, cv.toDataURL('image/png')); } catch (e) { /* stockage plein ou indisponible */ }
         if (!$('logoOn').checked) { $('logoOn').checked = true; $('tool-fastfetch').checked = true; $('fastfetchStart').checked = true; }
         render();
       };
@@ -280,9 +285,7 @@
     BOOLS.forEach(k => { $(k).checked = c[k]; });
     C.TOOLS.forEach(t => { $('tool-' + t.id).checked = c.tools[t.id]; });
     const zsh = c.shell === 'zsh';
-    ['history', 'completion'].forEach(k => { $(k).disabled = !zsh; });
-    ['autosuggestions', 'highlighting'].forEach(k => { $(k).disabled = c.shell !== 'zsh'; });
-    $('zshopts').hidden = c.shell !== 'zsh';
+    $('zshopts').hidden = !zsh;
     $('chsh').disabled = c.shell === 'bash';
     document.querySelectorAll('input[name="preset"]').forEach(i => { i.disabled = !c.starship; });
     C.REPLACEMENTS.forEach(r => {
@@ -510,7 +513,7 @@
   ['logoCols', 'logoDensity'].forEach(id => $(id).addEventListener('input', render));
   $('sampleBtn').addEventListener('click', () => {
     setSource(drawSample(), 'sample');
-    try { localStorage.removeItem(STORE + '.logo'); } catch (e) { /* ignore */ }
+    try { localStorage.removeItem(LOGO_STORE); } catch (e) { /* ignore */ }
     render();
   });
   const drop = $('drop');
@@ -524,7 +527,7 @@
   writeForm(cfg);
   render();
   try {
-    const saved = localStorage.getItem(STORE + '.logo');
+    const saved = localStorage.getItem(LOGO_STORE);
     if (saved) {
       const img = new Image();
       img.onload = () => { setSource(img, 'upload'); render(); };
